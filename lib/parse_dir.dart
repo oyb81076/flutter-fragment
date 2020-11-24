@@ -1,12 +1,13 @@
 import 'dart:io';
-import 'xml.dart';
+import 'models.dart';
+import 'parse.dart';
 
-Future<Fragments> parseByDirectory(String dir) async {
+Future<Fragments> parseDir(String dir) async {
   var files = await Directory(dir).list(recursive: true, followLinks: false);
   Fragments fragments = Fragments();
   DateTime lastModified = null;
   Map<String, String> ids = Map();
-  await files.asyncMap((el) async {
+  await files.where((event) => event.path.endsWith('.xml')).asyncMap((el) async {
     if (await FileSystemEntity.isFile(el.path)) {
       File file = File(el.path);
       var lm = await file.lastModified();
@@ -40,7 +41,7 @@ Future<Fragments> parseByDirectory(String dir) async {
     }
   }).toList();
   if (lastModified != null) {
-    fragments.lastModified = lastModified.toIso8601String();
+    fragments.lastModified = lastModified;
   }
   return fragments;
 }

@@ -1,138 +1,6 @@
 import 'dart:collection';
-
-abstract class Node {
-  String get tagName;
-  _setAttr(String attrName, String attrValue, Context ctx);
-  Map<String, dynamic> _getAttrs();
-}
-
-abstract class WithChild implements Node {
-  List get child;
-}
-
-abstract class Element extends Node {
-  String href;
-
-  @override
-  _setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'href') {
-      href = attrValue;
-    } else {
-      throw new ParserException('<view> 不存在属性$attrName', ctx);
-    }
-  }
-}
-
-class Fragments implements Node, WithChild {
-  final String tagName = 'fragments';
-  final List<Fragment> child = [];
-  String lastModified;
-
-  @override
-  _setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'lastModified') {
-      lastModified = attrValue;
-    } else {
-      throw ParserException('<fragments> 不存在属性$attrName', ctx);
-    }
-  }
-
-  @override
-  Map<String, dynamic> _getAttrs() {
-    return Map.from({'lastModified': lastModified});
-  }
-}
-
-class Fragment implements Node, WithChild {
-  final String tagName = 'fragment';
-  String id;
-  final List<Element> child = [];
-
-  @override
-  _setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'id') {
-      id = attrValue;
-    } else {
-      throw new ParserException('<fragment>不存在属性$attrName', ctx);
-    }
-  }
-
-  @override
-  Map<String, dynamic> _getAttrs() {
-    return Map.from({'id': id});
-  }
-}
-
-class View extends Element implements WithChild {
-  final String tagName = 'view';
-  final List<Element> child = [];
-  double width;
-  double height;
-
-  @override
-  _setAttr(String attrName, String attrValue, Context ctx) {
-    switch (attrName) {
-      case 'height':
-        height = doubleOf(attrValue, ctx);
-        break;
-      case 'width':
-        width = doubleOf(attrValue, ctx);
-        break;
-      case 'href':
-        href = attrValue;
-        break;
-      default:
-        super._setAttr(attrName, attrValue, ctx);
-    }
-  }
-
-  @override
-  Map<String, dynamic> _getAttrs() {
-    return Map.from({'width': width, 'height': height, 'href': href});
-  }
-}
-
-class Image extends Element {
-  final String tagName = 'image';
-  double width;
-  double height;
-  String src;
-
-  @override
-  void _setAttr(String attrName, String attrValue, Context ctx) {
-    switch (attrName) {
-      case 'height':
-        height = doubleOf(attrValue, ctx);
-        break;
-      case 'width':
-        width = doubleOf(attrValue, ctx);
-        break;
-      case 'src':
-        src = attrValue;
-        break;
-      case 'href':
-        href = attrValue;
-        break;
-      default:
-        throw new ParserException('<image> 不存在属性$attrName', ctx);
-    }
-  }
-
-  @override
-  Map<String, dynamic> _getAttrs() {
-    return Map.from(
-        {'width': width, 'height': height, 'src': src, 'href': href});
-  }
-}
-
-class Text extends Element {
-  final String tagName = 'text';
-  String text;
-  @override
-  Map<String, dynamic> _getAttrs() {
-    return Map.from({'href': href});
-  }
-}
+import 'escape.dart';
+import 'models.dart';
 
 Fragments parse(String content, {String filename = ""}) {
   Context context = Context(content, filename);
@@ -144,78 +12,6 @@ Fragments parse(String content, {String filename = ""}) {
   return context.end();
 }
 
-String serialize(dynamic root, {bool compcat = false}) {
-  String out = '';
-  String indent = '';
-  ListQueue list = ListQueue.from(root is List ? root.reversed : [root]);
-  while (list.isNotEmpty) {
-    var node = list.removeLast();
-    if (node is String) {
-      if (!compcat) indent = indent.substring(2);
-      out += '$indent</$node>';
-    } else if (node is Node) {
-      out += '$indent<${node.tagName}';
-      var attrs = node._getAttrs();
-      attrs.entries
-          .where((element) => element.value != null)
-          .forEach((element) {
-        out += ' ${element.key}="${escapeAttrValue(element.value)}"';
-      });
-      if (node is Text) {
-        String text = node.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-        if (compcat || !text.contains('\n')) {
-          out += '>$text</text>';
-        } else {
-          out += '>\n';
-          out += text
-              .split('\n')
-              .map((e) => e == '\n' ? '\n' : '  $indent$e')
-              .join('\n');
-          out += '\n';
-          out += '$indent</text>';
-        }
-      } else if (node is Image) {
-        out += '/>';
-      } else if (node is WithChild) {
-        if (node.child.isEmpty) {
-          out += '/>';
-        } else {
-          out += '>';
-          list.add(node.tagName);
-          list.addAll(node.child.reversed);
-          if (!compcat) {
-            indent += '  ';
-          }
-        }
-      } else {
-        throw new Exception('unsupport node $node');
-      }
-    }
-    if (!compcat && list.isNotEmpty) out += '\n';
-  }
-  return out;
-}
-
-String escapeAttrValue(dynamic value) {
-  if (value is String) {
-    return value.replaceAll('"', '&quot;');
-  } else if (value is double) {
-    return srzDouble(value);
-  } else if (value is int || value is bool) {
-    return value.toString();
-  } else {
-    throw new Exception('unspupprt value of $value');
-  }
-}
-
-var _escapes = Map.from({
-  "&lt;": "<",
-  "&gt;": '>',
-  '&amp;': '&',
-  '&quot;': '"',
-  '&apos;': "'",
-  '&eq;': "=",
-});
 enum _State {
   none, // 关闭状态或者其他
   none_lt, // <view> <
@@ -235,24 +31,36 @@ class Entry {
   View view;
   Image image;
   Text text;
+  Rich rich;
+  Span span;
   Fragment fragment;
   Fragments fragments;
+  bool innerText = false;
   Entry(
       {this.view,
       this.image,
       this.text,
+      this.rich,
+      this.span,
       this.fragment,
       this.fragments,
       this.closed = false}) {
-    if (view != null)
+    if (view != null) {
       node = view;
-    else if (image != null)
+    } else if (image != null) {
       node = image;
-    else if (text != null)
+    } else if (text != null) {
       node = text;
-    else if (fragment != null)
+    } else if (rich != null) {
+      node = rich;
+    } else if (span != null) {
+      node = span;
+    } else if (fragment != null) {
       node = fragment;
-    else if (fragments != null) node = fragments;
+    } else if (fragments != null) {
+      node = fragments;
+    }
+    innerText = node is WithText;
   }
 }
 
@@ -336,7 +144,7 @@ class Context {
     } else if (escape != null) {
       escape += c;
       if (c != ';') return null;
-      c = _escapes[escape];
+      c = escapeOf(escape);
       if (c == null) {
         throw new ParserException('未知的转移字符', this);
       }
@@ -360,16 +168,6 @@ class Context {
     }
   }
 
-  _State _atNoneLt(String c) {
-    if (c == '/') {
-      tagName = '';
-      return _State.none_closing;
-    } else {
-      tagName = c;
-      return _State.open_tag_name;
-    }
-  }
-
   _State _atOpenTagName(String c) {
     switch (c) {
       case '\t':
@@ -379,7 +177,7 @@ class Context {
         return _State.opening;
       case '>':
         _createElement();
-        return entry.text == null ? _State.none : _State.text;
+        return entry.innerText ? _State.text : _State.none;
       case '/':
         _createElement();
         return _State.opening_closing;
@@ -401,7 +199,7 @@ class Context {
       case '\n':
         return _State.opening;
       case '>':
-        return entry.text == null ? _State.none : _State.text;
+        return entry.innerText ? _State.text : _State.none;
       default:
         attrName = c;
         return _State.attr_name;
@@ -409,9 +207,10 @@ class Context {
   }
 
   _State _atOpeningClosing(String c) {
+    // <image />
     if (c != '>') throw new ParserException('字符必须是 >', this);
     _closeElement();
-    return entry.text == null ? _State.none : _State.text;
+    return _State.none;
   }
 
   _State _atAttrName(String c) {
@@ -448,7 +247,7 @@ class Context {
       } else if (c == '>') {
         attrQuot = null;
         _attr();
-        return entry.text != null ? _State.text : _State.none;
+        return entry.innerText ? _State.text : _State.none;
       }
     }
     if (attrValue == '' && (c == '"' || c == "'")) {
@@ -472,20 +271,25 @@ class Context {
 
   _State _atTextLt(String c) {
     textLt += c;
-    switch (textLt) {
-      case '</':
-      case '</t':
-      case '</te':
-      case '</tex':
-      case '</text':
-        return _State.text_lt;
-      case '</text>':
-        textLt = null;
-        _closeElement();
-        return _State.none;
-      default:
-        textValue += textLt;
-        return _State.text;
+    String close = '</${entry.node.tagName}>';
+    if (textLt == close) {
+      textLt = null;
+      _closeElement();
+      return _State.none;
+    } else if (close.startsWith(textLt)) {
+      return _State.text_lt;
+    }
+    textValue += textLt;
+    return _State.text;
+  }
+
+  _State _atNoneLt(String c) {
+    if (c == '/') {
+      tagName = '';
+      return _State.none_closing;
+    } else {
+      tagName = c;
+      return _State.open_tag_name;
     }
   }
 
@@ -502,7 +306,7 @@ class Context {
   }
 
   void _attr() {
-    entry.node._setAttr(attrName, attrValue, this);
+    entry.node.setAttr(attrName, attrValue, this);
     attrName = null;
     attrValue = null;
   }
@@ -514,12 +318,15 @@ class Context {
       case 'view':
         return _createEntry(Entry(view: View()));
       case 'text':
-        textValue = '';
         return _createEntry(Entry(text: Text()));
       case 'fragment':
         return _createEntry(Entry(fragment: Fragment()));
       case 'fragments':
         return _createEntry(Entry(fragments: Fragments()));
+      case 'span':
+        return _createEntry(Entry(span: Span()));
+      case 'rich':
+        return _createEntry(Entry(rich: Rich()));
       default:
         throw new ParserException('未知的标签' + tagName, this);
     }
@@ -546,11 +353,22 @@ class Context {
     } else if (next.fragments != null) {
       throw ParserException('<fragments> 必须是跟节点', this);
     } else if (entry.node is WithChild) {
+      if (next.node.tagName == 'span') {
+        if (entry.node.tagName != 'rich') {
+          throw ParserException(
+              '无法将<span>设置为<${entry.node.tagName}>的子节点', this);
+        }
+      } else if (entry.node.tagName == 'rich') {
+        throw ParserException('无法将节点<${next.node.tagName}>设置为<rich>的子节点', this);
+      }
       (entry.node as WithChild).child.add(next.node);
       stack.addLast(entry);
       entry = next;
     } else {
       throw ParserException('<${entry.node.tagName}>无法添加子标签', this);
+    }
+    if (next.innerText) {
+      textValue = '';
     }
   }
 
@@ -558,8 +376,9 @@ class Context {
     if (entry.closed) {
       throw ParserException('未知闭合标签 </$tagName>', this);
     }
-    if (entry.text != null) {
-      entry.text.text = trimText(textValue);
+    var node = entry.node;
+    if (node is WithText) {
+      node.text = trimText(textValue);
       textValue = null;
     }
     entry.closed = true;
@@ -567,29 +386,6 @@ class Context {
       entry = stack.removeLast();
     }
   }
-}
-
-String trimText(String text) {
-  if (text == '') return '';
-  if (text[0] != '\n') return text;
-  int i = 0;
-  String indent = '';
-  while (i < text.length && text[i] == '\n') i++;
-  while (i < text.length && (text[i] == ' ' || text[i] == '\t')) {
-    indent += text[i];
-    i++;
-  }
-  if (indent == '') return text;
-  if (text == '\n$indent') return '';
-  return text
-      .substring(1, text.lastIndexOf('\n'))
-      .split('\n')
-      .map((e) => e.isEmpty
-          ? e
-          : e.startsWith(indent)
-              ? e.substring(indent.length)
-              : throw Exception('缩进不对齐"$e", "$indent"'))
-      .join('\n');
 }
 
 class ParserException implements Exception {
@@ -610,10 +406,4 @@ double doubleOf(String value, Context ctx) {
   double d = double.tryParse(value);
   if (d == null) throw ParserException("无法将字符串'$value'转化为double", ctx);
   return d;
-}
-
-String srzDouble(double d) {
-  int i = d.toInt();
-  if (i == d) return i.toString();
-  return d.toString();
 }

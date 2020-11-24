@@ -1,16 +1,9 @@
 <fragment id="af">
   <image src="assets/tail.png" href="/image"/>
-  <text href="/text">Some Text &gt; HEre </text>
-  <text href="/text/muti/line">
-    Muti
-    Line 
-  </text>
-  <text href="/text/muti/line">single line</text>
-  <text></text>
+  <text href="/text">Some Text &gt; HEre</text>
   <view width="200" height="100" href="/home"/>
   <view height="100">
     <view>
-      <text>Some Text</text>
       <text>Some Text</text>
     </view>
   </view>
