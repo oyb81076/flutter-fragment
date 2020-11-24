@@ -1,32 +1,141 @@
 import 'dart:collection';
 
-class Fragment {
-  String id;
-  List<Node> child;
+abstract class Node {
+  String get tagName;
+  _setAttr(String attrName, String attrValue, Context ctx);
+  Map<String, dynamic> _getAttrs();
 }
 
-class Node {
+abstract class WithChild implements Node {
+  List get child;
+}
+
+abstract class Element extends Node {
   String href;
+
+  @override
+  _setAttr(String attrName, String attrValue, Context ctx) {
+    if (attrName == 'href') {
+      href = attrValue;
+    } else {
+      throw new ParserException('<view> 不存在属性$attrName', ctx);
+    }
+  }
 }
 
-class View extends Node {
+class Fragments implements Node, WithChild {
+  final String tagName = 'fragments';
+  final List<Fragment> child = [];
+  String lastModified;
+
+  @override
+  _setAttr(String attrName, String attrValue, Context ctx) {
+    if (attrName == 'lastModified') {
+      lastModified = attrValue;
+    } else {
+      throw ParserException('<fragments> 不存在属性$attrName', ctx);
+    }
+  }
+
+  @override
+  Map<String, dynamic> _getAttrs() {
+    return Map.from({'lastModified': lastModified});
+  }
+}
+
+class Fragment implements Node, WithChild {
+  final String tagName = 'fragment';
+  String id;
+  final List<Element> child = [];
+
+  @override
+  _setAttr(String attrName, String attrValue, Context ctx) {
+    if (attrName == 'id') {
+      id = attrValue;
+    } else {
+      throw new ParserException('<fragment>不存在属性$attrName', ctx);
+    }
+  }
+
+  @override
+  Map<String, dynamic> _getAttrs() {
+    return Map.from({'id': id});
+  }
+}
+
+class View extends Element implements WithChild {
+  final String tagName = 'view';
+  final List<Element> child = [];
   double width;
   double height;
-  List<Node> child;
+
+  @override
+  _setAttr(String attrName, String attrValue, Context ctx) {
+    switch (attrName) {
+      case 'height':
+        height = doubleOf(attrValue, ctx);
+        break;
+      case 'width':
+        width = doubleOf(attrValue, ctx);
+        break;
+      case 'href':
+        href = attrValue;
+        break;
+      default:
+        super._setAttr(attrName, attrValue, ctx);
+    }
+  }
+
+  @override
+  Map<String, dynamic> _getAttrs() {
+    return Map.from({'width': width, 'height': height, 'href': href});
+  }
 }
 
-class Image extends Node {
+class Image extends Element {
+  final String tagName = 'image';
   double width;
   double height;
   String src;
+
+  @override
+  void _setAttr(String attrName, String attrValue, Context ctx) {
+    switch (attrName) {
+      case 'height':
+        height = doubleOf(attrValue, ctx);
+        break;
+      case 'width':
+        width = doubleOf(attrValue, ctx);
+        break;
+      case 'src':
+        src = attrValue;
+        break;
+      case 'href':
+        href = attrValue;
+        break;
+      default:
+        throw new ParserException('<image> 不存在属性$attrName', ctx);
+    }
+  }
+
+  @override
+  Map<String, dynamic> _getAttrs() {
+    return Map.from(
+        {'width': width, 'height': height, 'src': src, 'href': href});
+  }
 }
 
-class Text extends Node {
+class Text extends Element {
+  final String tagName = 'text';
   String text;
+  @override
+  Map<String, dynamic> _getAttrs() {
+    return Map.from({'href': href});
+  }
 }
 
-List<Fragment> parse(String content) {
-  Context context = Context(content);
+Fragments parse(String content, {String filename = ""}) {
+  Context context = Context(content, filename);
   for (int i = 0; i < content.length; i++) {
     _State s = context.process(content[i]);
     if (s == null) throw ParserException('错误的返回状态', context);
@@ -35,82 +144,68 @@ List<Fragment> parse(String content) {
   return context.end();
 }
 
-String serialize(List<Fragment> fragments, {bool compcat = false}) {
+String serialize(dynamic root, {bool compcat = false}) {
   String out = '';
   String indent = '';
-  ListQueue list = ListQueue.from(fragments);
+  ListQueue list = ListQueue.from(root is List ? root.reversed : [root]);
   while (list.isNotEmpty) {
     var node = list.removeLast();
     if (node is String) {
       if (!compcat) indent = indent.substring(2);
       out += '$indent</$node>';
-      if (!compcat) out += '\n';
-    } else if (node is Text) {
-      out += '$indent<text';
-      if (node.href != null) out += ' href="${escapeAttrValue(node.href)}"';
-      if (node.text == '') {
-        out += '/>';
-        if (!compcat) out += '\n';
-      } else if (compcat) {
-        out += '>${node.text}</text>';
-      } else if (!node.text.contains('\n')) {
-        out += '>${node.text}</text>\n';
-      } else {
-        out += '>\n';
-        out += node.text
-            .split('\n')
-            .map((e) => e == '\n' ? '\n' : '  $indent$e')
-            .join('\n');
-        out += '\n';
-        out += '$indent</text>\n';
-      }
-    } else if (node is View) {
-      out += '$indent<view';
-      if (node.width != null) out += ' width=${srzDouble(node.width)}';
-      if (node.height != null) out += ' width=${srzDouble(node.height)}';
-      if (node.href != null) out += ' width=${escapeAttrValue(node.href)}';
-      if (node.child == null) {
-        out += '/>';
-        if (!compcat) out += '\n';
-      } else {
-        out += '>';
-        if (!compcat) {
+    } else if (node is Node) {
+      out += '$indent<${node.tagName}';
+      var attrs = node._getAttrs();
+      attrs.entries
+          .where((element) => element.value != null)
+          .forEach((element) {
+        out += ' ${element.key}="${escapeAttrValue(element.value)}"';
+      });
+      if (node is Text) {
+        String text = node.text.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+        if (compcat || !text.contains('\n')) {
+          out += '>$text</text>';
+        } else {
+          out += '>\n';
+          out += text
+              .split('\n')
+              .map((e) => e == '\n' ? '\n' : '  $indent$e')
+              .join('\n');
           out += '\n';
-          indent += '  ';
+          out += '$indent</text>';
         }
-        list.add('view');
-        list.addAll(node.child.reversed);
-      }
-    } else if (node is Fragment) {
-      out += '$indent<fragment';
-      if (node.id != null) out += ' id="${escapeAttrValue(node.id)}"';
-      if (node.child == null) {
+      } else if (node is Image) {
         out += '/>';
-        if (!compcat) out += '\n';
-      } else {
-        out += '>';
-        if (!compcat) {
-          out += '\n';
-          indent += '  ';
+      } else if (node is WithChild) {
+        if (node.child.isEmpty) {
+          out += '/>';
+        } else {
+          out += '>';
+          list.add(node.tagName);
+          list.addAll(node.child.reversed);
+          if (!compcat) {
+            indent += '  ';
+          }
         }
-        list.add('fragment');
-        list.addAll(node.child.reversed);
+      } else {
+        throw new Exception('unsupport node $node');
       }
-    } else if (node is Image) {
-      out += '$indent<image';
-      if (node.width != null) out += ' width=${srzDouble(node.width)}';
-      if (node.height != null) out += ' height=${srzDouble(node.height)}';
-      if (node.href != null) out += ' href="${escapeAttrValue(node.href)}"';
-      if (node.src != null) out += ' src="${escapeAttrValue(node.src)}"';
-      out += '/>';
-      if (!compcat) out += '\n';
     }
+    if (!compcat && list.isNotEmpty) out += '\n';
   }
   return out;
 }
 
-String escapeAttrValue(String value) {
-  return value.replaceAll('"', '&quot;');
+String escapeAttrValue(dynamic value) {
+  if (value is String) {
+    return value.replaceAll('"', '&quot;');
+  } else if (value is double) {
+    return srzDouble(value);
+  } else if (value is int || value is bool) {
+    return value.toString();
+  } else {
+    throw new Exception('unspupprt value of $value');
+  }
 }
 
 var _escapes = Map.from({
@@ -133,10 +228,37 @@ enum _State {
   text,
   text_lt, // <text> <
 }
-// <!-a-
+
+class Entry {
+  bool closed;
+  Node node;
+  View view;
+  Image image;
+  Text text;
+  Fragment fragment;
+  Fragments fragments;
+  Entry(
+      {this.view,
+      this.image,
+      this.text,
+      this.fragment,
+      this.fragments,
+      this.closed = false}) {
+    if (view != null)
+      node = view;
+    else if (image != null)
+      node = image;
+    else if (text != null)
+      node = text;
+    else if (fragment != null)
+      node = fragment;
+    else if (fragments != null) node = fragments;
+  }
+}
 
 class Context {
   String input;
+  String filename;
   _State state = _State.none;
   String attrName;
   String attrValue;
@@ -145,20 +267,16 @@ class Context {
   String textValue;
   String tagName;
   String textLt;
-  ListQueue stack = ListQueue();
-  View view;
-  Image image;
-  Text text;
-  Fragment fragment;
-  List<Fragment> results = List();
-  int line = 0;
-  int col = 0;
-  Context(this.input);
+  ListQueue<Entry> stack = ListQueue();
+  Entry entry;
+  int line = 1;
+  int col = 1;
+  Context(this.input, this.filename);
 
   _State process(String c) {
     if (c == '\n') {
       line += 1;
-      col = 0;
+      col = 1;
     } else {
       col += 1;
     }
@@ -188,15 +306,22 @@ class Context {
     }
   }
 
-  List<Fragment> end() {
+  Fragments end() {
     if (escape != null) {
       throw new ParserException('escape尚未结束', this);
-    } else if (stack.isNotEmpty) {
-      throw new ParserException('有标签尚未闭合', this);
-    } else if (state != _State.none) {
+    }
+    if (state != _State.none) {
       throw new ParserException('错误的状态$state', this);
     }
-    return results;
+    if (entry == null) return Fragments();
+    if (!entry.closed)
+      throw new ParserException('为闭合的标签<${entry.node.tagName}>', this);
+    while (stack.isNotEmpty) {
+      entry = stack.removeLast();
+      if (!entry.closed)
+        throw new ParserException('为闭合的标签<${entry.node.tagName}>', this);
+    }
+    return entry.fragments;
   }
 
   String _escape(String c) {
@@ -223,8 +348,6 @@ class Context {
   }
 
   _State _atNone(String c) {
-    c = _escape(c);
-    if (c == null) return _State.none;
     switch (c) {
       case '<':
         return _State.none_lt;
@@ -256,7 +379,7 @@ class Context {
         return _State.opening;
       case '>':
         _createElement();
-        return text == null ? _State.none : _State.text;
+        return entry.text == null ? _State.none : _State.text;
       case '/':
         _createElement();
         return _State.opening_closing;
@@ -278,7 +401,7 @@ class Context {
       case '\n':
         return _State.opening;
       case '>':
-        return text == null ? _State.none : _State.text;
+        return entry.text == null ? _State.none : _State.text;
       default:
         attrName = c;
         return _State.attr_name;
@@ -288,7 +411,7 @@ class Context {
   _State _atOpeningClosing(String c) {
     if (c != '>') throw new ParserException('字符必须是 >', this);
     _closeElement();
-    return text == null ? _State.none : _State.text;
+    return entry.text == null ? _State.none : _State.text;
   }
 
   _State _atAttrName(String c) {
@@ -316,6 +439,16 @@ class Context {
         attrQuot = null;
         _attr();
         return _State.opening;
+      }
+    } else if (attrValue != '') {
+      if (c == ' ' || c == '\t' || c == '\n') {
+        attrQuot = null;
+        _attr();
+        return _State.opening;
+      } else if (c == '>') {
+        attrQuot = null;
+        _attr();
+        return entry.text != null ? _State.text : _State.none;
       }
     }
     if (attrValue == '' && (c == '"' || c == "'")) {
@@ -361,144 +494,82 @@ class Context {
       tagName += c;
       return _State.none_closing;
     }
-    if (view != null) {
-      if (tagName != 'view')
-        throw new ParserException('<view> 和 </$tagName> 不匹配', this);
-    } else if (text != null) {
-      if (tagName != 'text')
-        throw new ParserException('<text> 和 </$tagName> 不匹配', this);
-    } else if (image != null) {
-      if (tagName != 'image')
-        throw new ParserException('<image> 和 </$tagName> 不匹配', this);
-    } else if (fragment != null) {
-      if (tagName != 'fragment')
-        throw new ParserException('<fragment> 和 </$tagName> 不匹配', this);
-    } else {
-      throw ParserException('未知的闭合标签', this);
+    if (entry.node.tagName != tagName) {
+      throw new ParserException('<view> 和 </$tagName> 不匹配', this);
     }
     _closeElement();
     return _State.none;
   }
 
   void _attr() {
-    if (view != null) {
-      switch (attrName) {
-        case 'height':
-          view.height = parseDouble(attrValue, this);
-          break;
-        case 'width':
-          view.width = parseDouble(attrValue, this);
-          break;
-        case 'href':
-          view.href = attrValue;
-          break;
-        default:
-          throw new ParserException('<view> 不存在属性$attrName', this);
-      }
-    } else if (text != null) {
-      switch (attrName) {
-        case 'href':
-          text.href = attrValue;
-          break;
-        default:
-          throw new ParserException('<text> 不存在属性$attrName', this);
-      }
-    } else if (image != null) {
-      switch (attrName) {
-        case 'height':
-          image.height = parseDouble(attrValue, this);
-          break;
-        case 'width':
-          image.width = parseDouble(attrValue, this);
-          break;
-        case 'src':
-          image.src = attrValue;
-          break;
-        case 'href':
-          image.href = attrValue;
-          break;
-        default:
-          throw new ParserException('<image> 不存在属性$attrName', this);
-      }
-    } else if (fragment != null) {
-      if (attrName == 'id') {
-        fragment.id = attrValue;
-      } else {
-        throw new ParserException('<fragment>不存在属性$attrName', this);
-      }
-    }
+    entry.node._setAttr(attrName, attrValue, this);
     attrName = null;
     attrValue = null;
   }
 
   void _createElement() {
-    List child = null;
-    if (view != null) {
-      if (stack.isEmpty) throw ParserException('根节点必须是<fragment>', this);
-      child = view.child == null ? (view.child = List()) : view.child;
-      stack.addLast(view);
-    } else if (text != null) {
-      if (stack.isEmpty) throw ParserException('根节点必须是<fragment>', this);
-      stack.addLast(text);
-      text = null;
-    } else if (image != null) {
-      if (stack.isEmpty) throw ParserException('根节点必须是<fragment>', this);
-      stack.addLast(image);
-      image = null;
-    } else if (fragment != null) {
-      stack.addLast(fragment);
-      child =
-          fragment.child == null ? (fragment.child = List()) : fragment.child;
-      fragment = null;
-    }
     switch (tagName) {
       case 'image':
-        child.add(image = Image());
-        break;
+        return _createEntry(Entry(image: Image()));
       case 'view':
-        child.add(view = View());
-        break;
-      case 'fragment':
-        fragment = Fragment();
-        if (stack.isNotEmpty) throw ParserException('<fragment>必须是跟节点', this);
-        break;
+        return _createEntry(Entry(view: View()));
       case 'text':
-        child.add(text = Text());
         textValue = '';
-        break;
+        return _createEntry(Entry(text: Text()));
+      case 'fragment':
+        return _createEntry(Entry(fragment: Fragment()));
+      case 'fragments':
+        return _createEntry(Entry(fragments: Fragments()));
       default:
         throw new ParserException('未知的标签' + tagName, this);
     }
   }
 
-  void _closeElement() {
-    if (stack.isEmpty) {
-      results.add(fragment);
-      fragment = null;
+  void _createEntry(Entry next) {
+    if (entry == null) {
+      if (next.fragments != null) {
+        entry = next;
+      } else if (next.fragment != null) {
+        entry = Entry(fragments: Fragments(), closed: true);
+        entry.fragments.child.add(next.fragment);
+        stack.addLast(entry);
+        entry = next;
+      } else {
+        Fragments fragments = Fragments();
+        Fragment fragment = Fragment();
+        fragments.child.add(fragment);
+        fragment.child.add(next.node);
+        stack.addLast(Entry(fragments: fragments, closed: true));
+        stack.addLast(entry = Entry(fragment: fragment, closed: true));
+        entry = next;
+      }
+    } else if (next.fragments != null) {
+      throw ParserException('<fragments> 必须是跟节点', this);
+    } else if (entry.node is WithChild) {
+      (entry.node as WithChild).child.add(next.node);
+      stack.addLast(entry);
+      entry = next;
     } else {
-      if (text != null) {
-        text.text = trim(textValue);
-        textValue = null;
-      }
-      var node = stack.removeLast();
-      text = null;
-      view = null;
-      image = null;
-      fragment = null;
-      if (node is View) {
-        view = node;
-      } else if (node is Text) {
-        text = node;
-      } else if (node is Image) {
-        image = node;
-      } else if (node is Fragment) {
-        fragment = node;
-      }
+      throw ParserException('<${entry.node.tagName}>无法添加子标签', this);
+    }
+  }
+
+  void _closeElement() {
+    if (entry.closed) {
+      throw ParserException('未知闭合标签 </$tagName>', this);
+    }
+    if (entry.text != null) {
+      entry.text.text = trimText(textValue);
+      textValue = null;
+    }
+    entry.closed = true;
+    if (stack.isNotEmpty) {
+      entry = stack.removeLast();
     }
   }
 }
 
-String trim(String text) {
+String trimText(String text) {
   if (text == '') return '';
   if (text[0] != '\n') return text;
   int i = 0;
@@ -525,15 +596,17 @@ class ParserException implements Exception {
   String msg;
   int line;
   int col;
+  String filename;
   ParserException(this.msg, Context ctx) {
     line = ctx.line;
     col = ctx.col;
+    filename = ctx.filename;
   }
   @override
-  String toString() => 'ParserException: $msg (${line}:${col})';
+  String toString() => 'ParserException: $msg ($filename:${line}:${col})';
 }
 
-double parseDouble(String value, Context ctx) {
+double doubleOf(String value, Context ctx) {
   double d = double.tryParse(value);
   if (d == null) throw ParserException("无法将字符串'$value'转化为double", ctx);
   return d;

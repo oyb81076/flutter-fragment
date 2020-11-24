@@ -1,35 +1,51 @@
 # flutter-fragment
 
+## 片段源码
+
+fragments/top.xml
+
 ```xml
-<fragment id="top">
-  <view width=20 height=30>
-  </view>
-<fragment>
+<view width=20 height=30></view>
+```
+
+fragments/button.xml
+
+```xml
 <fragment id="bottom">
   <view width=20 height=30>
   </view>
 <fragment>
+```
+
+fragments/left.xml
+
+```xml
 <fragment id="left">
   <view width=20 height=30>
   </view>
 <fragment>
 ```
 
-```dart
-// 打开项目的时候
-Fragment.load('assets/fragment.html', remote: 'http://oss.www.baidu.com/assets.html');
+## 片段
 
+## Usage In App
+
+```dart
 // 使用的时候
-class AppHome extends StatelessWidget{
+class App extends StatelessWidget{
   build(){
-    return Container(
-      child: [
-        Fragment(id: 'top'),
-        Container(
-          child: Fragment(id: 'bottom'),
-        )
-        Fragment(id: 'bottom'),
-      ]
+    return FragmentProvider(
+      asset: 'assets/fragment.xml',
+      remote: 'http://192.168.1.1/fragment.xml',
+      child: Container(
+        child: [
+          Fragment(id: 'top'),
+          Container(
+            child: Fragment(id: 'bottom'),
+          )
+          Fragment(id: 'bottom'),
+        ]
+      )
     )
   }
 }

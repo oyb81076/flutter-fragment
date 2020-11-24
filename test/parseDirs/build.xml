@@ -1,0 +1,17 @@
+<fragments lastModified="2020-11-24T15:00:38.000">
+  <fragment id="layout/bottom">
+    <view>
+      <text>This is bottom</text>
+    </view>
+  </fragment>
+  <fragment id="layout/top">
+    <view>
+      <text>This is Top</text>
+    </view>
+  </fragment>
+  <fragment id="product/index">
+    <view>
+      <text>product index</text>
+    </view>
+  </fragment>
+</fragments>

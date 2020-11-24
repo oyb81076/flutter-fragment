@@ -1,7 +1,3 @@
-import '../lib/xml.dart';
-
-main() {
-  String content = """
 <fragment id="af">
   <image src="assets/tail.png" href="/image" />
   <text href="/text">Some Text > HEre </text>
@@ -22,9 +18,3 @@ main() {
     </view>
   </view>
 </fragment>
-  """;
-
-  List<Fragment> fragments = parse(content);
-  String dist = serialize(fragments, compcat: false);
-  print(dist);
-}
