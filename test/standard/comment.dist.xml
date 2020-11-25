@@ -1,0 +1,4 @@
+<view>
+  <text>ab c</text>
+  <text>ab &lt;!- &lt;! &lt; c</text>
+</view>

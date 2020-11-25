@@ -6,13 +6,10 @@ import 'models.dart';
 class Entry {
   bool closed;
   Node node;
-  bool innerText = false;
-  Entry(this.node, {this.closed = false}) {
-    innerText = node is WithText;
-  }
+  Entry(this.node, {this.closed = false});
 }
 
-class Context {
+class Token {
   String input;
   String filename;
   String attrName;
@@ -21,12 +18,12 @@ class Context {
   String escape;
   String textValue;
   String tagName;
-  String textLt;
   ListQueue<Entry> stack = ListQueue();
   Entry entry;
   int line = 1;
   int col = 1;
-  Context(this.input, this.filename);
+  bool texting = false;
+  Token(this.input, this.filename);
 
   void pos(String c) {
     if (c == '\n') {
@@ -112,7 +109,8 @@ class Context {
     } else {
       throw ParserException('<${entry.node.tagName}>无法添加子标签', this);
     }
-    if (entry.innerText) {
+    texting = next is WithText;
+    if (texting) {
       textValue = '';
     }
   }
@@ -130,6 +128,7 @@ class Context {
     if (stack.isNotEmpty) {
       entry = stack.removeLast();
     }
+    texting = false;
   }
 }
 
@@ -138,10 +137,10 @@ class ParserException implements Exception {
   int line;
   int col;
   String filename;
-  ParserException(this.msg, Context ctx) {
-    line = ctx.line;
-    col = ctx.col;
-    filename = ctx.filename;
+  ParserException(this.msg, Token token) {
+    line = token.line;
+    col = token.col;
+    filename = token.filename;
   }
   @override
   String toString() => 'ParserException: $msg ($filename:${line}:${col})';

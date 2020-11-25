@@ -1,0 +1,16 @@
+<!-- This is Some Comment At None -->
+<view>
+  <!-- This is Some Comment At View -->
+  <text>
+    ab
+    <!-- Some Comment -->
+    c
+  </text>
+  <text>
+    ab
+    <!-
+    <!
+    <
+    c
+  </text>
+</view>

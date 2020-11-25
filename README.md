@@ -8,31 +8,28 @@ fragments/top.xml
 <view width=20 height=30></view>
 ```
 
-fragments/button.xml
+templates/bottom.xml
 
 ```xml
-<fragment id="bottom">
-  <view width=20 height=30>
-  </view>
-<fragment>
+<view width=20 height=30>
+  <text>bottom</text>
+</view>
 ```
 
 fragments/left.xml
 
 ```xml
-<fragment id="left">
-  <view width=20 height=30>
-  </view>
-<fragment>
+<view width=20 height=30>
+</view>
 ```
 
 ## 片段打包
 
 ```dart
 main() async {
-  Fragments fragments = await parseDir('/path/to/fragments/root');
+  Fragments fragments = await parseDir('/path/to/templates/root');
   String dist = serialize(fragments);
-  await File('/path/to/assets/fragment-bundle.xml').writeAsString(dist);
+  await File('/path/to/assets/templates-bundle.xml').writeAsString(dist);
 }
 ```
 
@@ -43,18 +40,19 @@ main() async {
 class App extends StatelessWidget {
   build(){
     return FragmentProvider(
-      asset: 'assets/fragment-bundle.xml',
-      remote: 'http://192.168.1.1/fragment.xml',
+      asset: 'assets/templates-bundle.xml',
+      remote: 'http://192.168.1.1/templates.xml',
       child: Container(
         child: [
           Fragment(id: 'top'),
           Container(
             child: Fragment(id: 'bottom'),
-          )
+          ),
           Fragment(id: 'bottom'),
-        ]
-      )
-    )
+          Fragment(url: 'http://192.168.1.1/some-dynamic-xml-render-by-server'),
+        ],
+      );
+    );
   }
 }
 ```

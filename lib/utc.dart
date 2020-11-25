@@ -1,19 +1,6 @@
 // @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
 const WEEK_DAY = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const MONTH = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec"
-];
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 String toUTC(DateTime date) {
   if (date == null) return null;

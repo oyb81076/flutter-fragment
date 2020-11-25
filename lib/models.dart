@@ -1,4 +1,4 @@
-import 'parse_context.dart';
+import 'token.dart';
 
 Node newNode(String tagName) {
   switch (tagName) {
@@ -15,7 +15,7 @@ Node newNode(String tagName) {
 
 abstract class Node {
   String get tagName;
-  setAttr(Context ctx);
+  setAttr(Token token);
   Map<String, dynamic> getAttrs();
 }
 
@@ -31,11 +31,11 @@ abstract class Element extends Node {
   String href;
 
   @override
-  setAttr(Context ctx) {
-    if (ctx.attrName == 'href') {
-      href = ctx.attrValue;
+  setAttr(Token token) {
+    if (token.attrName == 'href') {
+      href = token.attrValue;
     } else {
-      throw new ParserException('<view> 不存在属性${ctx.attrName}', ctx);
+      throw new ParserException('<view> 不存在属性${token.attrName}', token);
     }
   }
 }
@@ -47,11 +47,11 @@ class Templates implements Node, WithChild {
   String etag;
 
   @override
-  setAttr(Context ctx) {
-    if (ctx.attrName == 'lastModified') {
-      lastModified = DateTime.parse(ctx.attrValue);
+  setAttr(Token token) {
+    if (token.attrName == 'lastModified') {
+      lastModified = DateTime.parse(token.attrValue);
     } else {
-      throw ParserException('<fragments> 不存在属性${ctx.attrName}', ctx);
+      throw ParserException('<fragments> 不存在属性${token.attrName}', token);
     }
   }
 
@@ -67,11 +67,11 @@ class Template implements Node, WithChild {
   final List<Element> child = [];
 
   @override
-  setAttr(Context ctx) {
-    if (ctx.attrName == 'id') {
-      id = ctx.attrValue;
+  setAttr(Token token) {
+    if (token.attrName == 'id') {
+      id = token.attrValue;
     } else {
-      throw new ParserException('<fragment>不存在属性${ctx.attrName}', ctx);
+      throw new ParserException('<fragment>不存在属性${token.attrName}', token);
     }
   }
 
@@ -88,19 +88,19 @@ class View extends Element implements WithChild {
   double height;
 
   @override
-  setAttr(Context ctx) {
-    switch (ctx.attrName) {
+  setAttr(Token token) {
+    switch (token.attrName) {
       case 'height':
-        height = ctx.doubleOfAttrValue();
+        height = token.doubleOfAttrValue();
         break;
       case 'width':
-        width = ctx.doubleOfAttrValue();
+        width = token.doubleOfAttrValue();
         break;
       case 'href':
-        href = ctx.attrValue;
+        href = token.attrValue;
         break;
       default:
-        super.setAttr(ctx);
+        super.setAttr(token);
     }
   }
 
@@ -117,22 +117,22 @@ class Image extends Element {
   String src;
 
   @override
-  void setAttr(Context ctx) {
-    switch (ctx.attrName) {
+  void setAttr(Token token) {
+    switch (token.attrName) {
       case 'height':
-        height = ctx.doubleOfAttrValue();
+        height = token.doubleOfAttrValue();
         break;
       case 'width':
-        width = ctx.doubleOfAttrValue();
+        width = token.doubleOfAttrValue();
         break;
       case 'src':
-        src = ctx.attrValue;
+        src = token.attrValue;
         break;
       case 'href':
-        href = ctx.attrValue;
+        href = token.attrValue;
         break;
       default:
-        throw new ParserException('<image> 不存在属性${ctx.attrName}', ctx);
+        throw new ParserException('<image> 不存在属性${token.attrName}', token);
     }
   }
 

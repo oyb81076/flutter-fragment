@@ -61,4 +61,14 @@ main() async {
     String dist = serialize(templates, compact: false);
     expect(dist, equals('<templates/>'));
   });
+
+  test("comment", () async {
+    String filename = resolve('comment.src.xml');
+    String content = await File(filename).readAsString();
+    Templates templates = parse(content, filename: filename);
+    expect(templates.child.length, equals(1));
+    String build = serialize(templates.child[0].child, compact: false);
+    String dist = await File(resolve('comment.dist.xml')).readAsString();
+    expect(build, equals(dist));
+  });
 }
