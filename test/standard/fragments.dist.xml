@@ -1,8 +1,0 @@
-<fragments lastModified="2020-11-24T12:11:24.611Z">
-  <fragment id="af">
-    <image src="assets/tail.png" href="/image"/>
-  </fragment>
-  <fragment id="next">
-    <text>Simple Fragment</text>
-  </fragment>
-</fragments>

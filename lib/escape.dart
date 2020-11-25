@@ -1,4 +1,4 @@
-var _escapes = Map.from({
+var _escapes = {
   "&lt;": "<",
   "&gt;": '>',
   '&amp;': '&',
@@ -6,9 +6,9 @@ var _escapes = Map.from({
   '&apos;': "'",
   '&eq;': "=",
   '&nbsp;': '\u00A0',
-});
+};
 
-String escapeOf(String chars) {
+String fromEscape(String chars) {
   return _escapes[chars];
 }
 

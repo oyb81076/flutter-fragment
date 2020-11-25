@@ -1,9 +1,21 @@
-import 'package:flutter_fragment/parse.dart';
-import 'parse.dart';
+import 'parse_context.dart';
+
+Node newNode(String tagName) {
+  switch (tagName) {
+    case 'image': return Image();
+    case 'view': return View();
+    case 'text': return Text();
+    case 'template': return Template();
+    case 'templates': return Templates();
+    case 'span': return Span();
+    case 'rich': return Rich();
+    default: return null;
+  }
+}
 
 abstract class Node {
   String get tagName;
-  setAttr(String attrName, String attrValue, Context ctx);
+  setAttr(Context ctx);
   Map<String, dynamic> getAttrs();
 }
 
@@ -19,53 +31,53 @@ abstract class Element extends Node {
   String href;
 
   @override
-  setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'href') {
-      href = attrValue;
+  setAttr(Context ctx) {
+    if (ctx.attrName == 'href') {
+      href = ctx.attrValue;
     } else {
-      throw new ParserException('<view> 不存在属性$attrName', ctx);
+      throw new ParserException('<view> 不存在属性${ctx.attrName}', ctx);
     }
   }
 }
 
-class Fragments implements Node, WithChild {
-  final String tagName = 'fragments';
-  final List<Fragment> child = [];
+class Templates implements Node, WithChild {
+  final String tagName = 'templates';
+  final List<Template> child = [];
   DateTime lastModified;
   String etag;
 
   @override
-  setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'lastModified') {
-      lastModified = DateTime.parse(attrValue);
+  setAttr(Context ctx) {
+    if (ctx.attrName == 'lastModified') {
+      lastModified = DateTime.parse(ctx.attrValue);
     } else {
-      throw ParserException('<fragments> 不存在属性$attrName', ctx);
+      throw ParserException('<fragments> 不存在属性${ctx.attrName}', ctx);
     }
   }
 
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'lastModified': lastModified, 'etag': etag});
+    return {'lastModified': lastModified, 'etag': etag};
   }
 }
 
-class Fragment implements Node, WithChild {
-  final String tagName = 'fragment';
+class Template implements Node, WithChild {
+  final String tagName = 'template';
   String id;
   final List<Element> child = [];
 
   @override
-  setAttr(String attrName, String attrValue, Context ctx) {
-    if (attrName == 'id') {
-      id = attrValue;
+  setAttr(Context ctx) {
+    if (ctx.attrName == 'id') {
+      id = ctx.attrValue;
     } else {
-      throw new ParserException('<fragment>不存在属性$attrName', ctx);
+      throw new ParserException('<fragment>不存在属性${ctx.attrName}', ctx);
     }
   }
 
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'id': id});
+    return {'id': id};
   }
 }
 
@@ -76,25 +88,25 @@ class View extends Element implements WithChild {
   double height;
 
   @override
-  setAttr(String attrName, String attrValue, Context ctx) {
-    switch (attrName) {
+  setAttr(Context ctx) {
+    switch (ctx.attrName) {
       case 'height':
-        height = doubleOf(attrValue, ctx);
+        height = ctx.doubleOfAttrValue();
         break;
       case 'width':
-        width = doubleOf(attrValue, ctx);
+        width = ctx.doubleOfAttrValue();
         break;
       case 'href':
-        href = attrValue;
+        href = ctx.attrValue;
         break;
       default:
-        super.setAttr(attrName, attrValue, ctx);
+        super.setAttr(ctx);
     }
   }
 
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'width': width, 'height': height, 'href': href});
+    return {'width': width, 'height': height, 'href': href};
   }
 }
 
@@ -105,29 +117,28 @@ class Image extends Element {
   String src;
 
   @override
-  void setAttr(String attrName, String attrValue, Context ctx) {
-    switch (attrName) {
+  void setAttr(Context ctx) {
+    switch (ctx.attrName) {
       case 'height':
-        height = doubleOf(attrValue, ctx);
+        height = ctx.doubleOfAttrValue();
         break;
       case 'width':
-        width = doubleOf(attrValue, ctx);
+        width = ctx.doubleOfAttrValue();
         break;
       case 'src':
-        src = attrValue;
+        src = ctx.attrValue;
         break;
       case 'href':
-        href = attrValue;
+        href = ctx.attrValue;
         break;
       default:
-        throw new ParserException('<image> 不存在属性$attrName', ctx);
+        throw new ParserException('<image> 不存在属性${ctx.attrName}', ctx);
     }
   }
 
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from(
-        {'width': width, 'height': height, 'src': src, 'href': href});
+    return {'width': width, 'height': height, 'src': src, 'href': href};
   }
 }
 
@@ -136,7 +147,7 @@ class Text extends Element implements WithText {
   String text;
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'href': href});
+    return {'href': href};
   }
 }
 
@@ -145,7 +156,7 @@ class Rich extends Element implements WithChild {
   List<Span> child = [];
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'href': href});
+    return {'href': href};
   }
 }
 
@@ -154,6 +165,6 @@ class Span extends Element implements WithText {
   String text;
   @override
   Map<String, dynamic> getAttrs() {
-    return Map.from({'href': href});
+    return {'href': href};
   }
 }

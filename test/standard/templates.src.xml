@@ -1,0 +1,8 @@
+<templates lastModified="2020-11-24T12:11:24.611Z">
+  <template id="af">
+    <image src="assets/tail.png" href="/image"/>
+  </template>
+  <template id="next">
+    <text>Simple Fragment</text>
+  </template>
+</templates>

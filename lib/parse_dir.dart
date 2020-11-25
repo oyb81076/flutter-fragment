@@ -2,9 +2,9 @@ import 'dart:io';
 import 'models.dart';
 import 'parse.dart';
 
-Future<Fragments> parseDir(String dir) async {
+Future<Templates> parseDir(String dir) async {
   var files = await Directory(dir).list(recursive: true, followLinks: false);
-  Fragments fragments = Fragments();
+  Templates fragments = Templates();
   DateTime lastModified = null;
   Map<String, String> ids = Map();
   await files.where((event) => event.path.endsWith('.xml')).asyncMap((el) async {

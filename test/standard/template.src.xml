@@ -1,4 +1,4 @@
-<fragment id="af">
+<template id="af">
   <image src="assets/tail.png" href="/image" />
   <text href="/text">Some Text > HEre</text>
   <view height="100" width="200" href="/home"></view>
@@ -7,4 +7,4 @@
       <text>Some Text</text>
     </view>
   </view>
-</fragment>
+</template>

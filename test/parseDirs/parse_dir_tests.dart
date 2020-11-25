@@ -8,7 +8,7 @@ import '../resolve.dart';
 main() {
   test("all", () async {
     String dir = resolve('source');
-    Fragments fragments = await parseDir(dir);
+    Templates fragments = await parseDir(dir);
     String dist = serialize(fragments);
     String matcher = await File(resolve('build.xml')).readAsString();
     expect(dist, equals(matcher));
