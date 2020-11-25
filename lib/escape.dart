@@ -40,17 +40,14 @@ String _double2String(double d) {
 }
 
 /**
- * 去掉 <text></text> 标签中的一些文字
- * 如
- * <text>
- * as b
- *    c
- * e
- *   </text>
- * 可以转化为 "as b\nc\ne"
+ * 单行文本保留前后空格, 并将连续多个空格符合并为1个
+ * 多行文本删除前后空格, 并将连续多个空格符合并为1个
  */
 String trimText(String text) {
   if (text == '') return text;
+  if (!text.contains('\n')) {
+    return text.replaceAll(RegExp(r'[ \t\n]+'), ' ');
+  }
   return text
       .replaceFirst(RegExp(r'^[ \t\n]+'), '')
       .replaceFirst(RegExp(r'[ \t\n]+$'), '')
