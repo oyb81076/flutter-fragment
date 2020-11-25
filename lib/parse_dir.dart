@@ -39,7 +39,7 @@ Future<Templates> parseDir(String dir) async {
         lastModified = lm;
       }
     }
-  }).toList();
+  }).last;
   if (lastModified != null) {
     fragments.lastModified = lastModified;
   }
