@@ -3,5 +3,5 @@
   <span></span>
   <span >Text only</span>
   <span>333</span>
-  <span><rich></rich></span>
+  <span>&lt;rich&gt;&lt;/rich&gt;</span>
 </rich>

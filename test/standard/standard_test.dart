@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:flutter_fragment/models.dart';
-import 'package:flutter_fragment/parse.dart';
-import 'package:flutter_fragment/serialize.dart';
+import 'package:flutter_fragment/xml/models.dart';
+import 'package:flutter_fragment/xml/parse.dart';
+import 'package:flutter_fragment/xml/serialize.dart';
 import 'package:test/test.dart';
 import '../resolve.dart';
 
@@ -19,8 +19,8 @@ main() async {
     String filename = resolve('template.src.xml');
     String content = await File(filename).readAsString();
     Templates templates = parse(content, filename: filename);
-    expect(templates.child.length, equals(1));
-    String build = serialize(templates.child[0], compact: false);
+    expect(templates.children.length, equals(1));
+    String build = serialize(templates.children[0], compact: false);
     String dist = await File(resolve('template.dist.xml')).readAsString();
     expect(build, equals(dist));
   });
@@ -29,8 +29,8 @@ main() async {
     String filename = resolve('view.src.xml');
     String content = await File(filename).readAsString();
     Templates templates = parse(content, filename: filename);
-    expect(templates.child.length, equals(1));
-    String build = serialize(templates.child[0].child, compact: false);
+    expect(templates.children.length, equals(1));
+    String build = serialize(templates.children[0].children, compact: false);
     String dist = await File(resolve('view.dist.xml')).readAsString();
     expect(build, equals(dist));
   });
@@ -39,8 +39,8 @@ main() async {
     String filename = resolve('rich.src.xml');
     String content = await File(filename).readAsString();
     Templates templates = parse(content, filename: filename);
-    expect(templates.child.length, equals(1));
-    String build = serialize(templates.child[0].child, compact: false);
+    expect(templates.children.length, equals(1));
+    String build = serialize(templates.children[0].children, compact: false);
     String dist = await File(resolve('rich.dist.xml')).readAsString();
     expect(build, equals(dist));
   });
@@ -49,15 +49,15 @@ main() async {
     String filename = resolve('text.src.xml');
     String content = await File(filename).readAsString();
     Templates templates = parse(content, filename: filename);
-    expect(templates.child.length, equals(1));
-    String build = serialize(templates.child[0].child, compact: false);
+    expect(templates.children.length, equals(1));
+    String build = serialize(templates.children[0].children, compact: false);
     String dist = await File(resolve('text.dist.xml')).readAsString();
     expect(build, equals(dist));
   });
 
   test("empty", () async {
     Templates templates = parse("\n\n\n");
-    expect(templates.child.length, equals(0));
+    expect(templates.children.length, equals(0));
     String dist = serialize(templates, compact: false);
     expect(dist, equals('<templates/>'));
   });
@@ -66,8 +66,8 @@ main() async {
     String filename = resolve('comment.src.xml');
     String content = await File(filename).readAsString();
     Templates templates = parse(content, filename: filename);
-    expect(templates.child.length, equals(1));
-    String build = serialize(templates.child[0].child, compact: false);
+    expect(templates.children.length, equals(1));
+    String build = serialize(templates.children[0].children, compact: false);
     String dist = await File(resolve('comment.dist.xml')).readAsString();
     expect(build, equals(dist));
   });

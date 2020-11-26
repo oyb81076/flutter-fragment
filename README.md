@@ -41,6 +41,7 @@ class App extends StatelessWidget {
   build(){
     return FragmentProvider(
       asset: 'assets/templates-bundle.xml',
+      local: 'templates.xml',
       remote: 'http://192.168.1.1/templates.xml',
       child: Container(
         child: [

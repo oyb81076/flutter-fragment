@@ -13,26 +13,26 @@ Future<Templates> parseDir(String dir) async {
       var lm = await file.lastModified();
       String content = await file.readAsString();
       var fs = parse(content, filename: el.path);
-      if (fs.child.isEmpty) return;
-      if (fs.child.length == 1) {
-        if (fs.child[0].id == null) {
-          fs.child[0].id = el.path
+      if (fs.children.isEmpty) return;
+      if (fs.children.length == 1) {
+        if (fs.children[0].id == null) {
+          fs.children[0].id = el.path
               .substring(dir.length + 1)
               .replaceFirst(RegExp(r'\..*$'), '');
         }
       } else {
-        if (fs.child.every((element) => element.id == null)) {
+        if (fs.children.every((element) => element.id == null)) {
           throw new Exception('多个片段写入一个文件的时候<fragment>必须指名id at ${el.path}');
         }
       }
-      fs.child.forEach((fragment) {
+      fs.children.forEach((fragment) {
         if (ids.containsKey(fragment.id)) {
           throw new Exception(
               '文件 ${file.path} 和 ${ids[fragment.id]} 片段ID重复: ${fragment.id}');
         }
         ids[fragment.id] = file.path;
       });
-      fragments.child.addAll(fs.child);
+      fragments.children.addAll(fs.children);
       if (lastModified == null) {
         lastModified = lm;
       } else if (lastModified.isBefore(lastModified)) {
