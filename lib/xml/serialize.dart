@@ -1,6 +1,6 @@
 import 'dart:collection';
-import 'models.dart';
-import 'chars.dart';
+import '../node.dart';
+import '../utils/chars.dart';
 
 String serialize(dynamic root, {bool compact = false}) {
   StringBuffer out = StringBuffer();

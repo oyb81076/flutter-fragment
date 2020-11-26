@@ -1,6 +1,6 @@
 import 'dart:collection';
-import 'chars.dart';
-import 'models.dart';
+import '../utils/chars.dart';
+import '../node.dart';
 
 class Entry {
   bool closed;
@@ -11,6 +11,8 @@ class Entry {
 class Context implements Val {
   final String input;
   final String filename;
+  // 严格模式下 错误会被抛出
+  final bool strictMode;
 
   final ListQueue<Entry> stack = ListQueue();
   Entry entry;
@@ -30,7 +32,7 @@ class Context implements Val {
   String _text;
   String _attrValue;
 
-  Context(this.input, this.filename);
+  Context(this.input, this.filename, this.strictMode);
 
   get strVal {
     return _attrValue == null ? null : unescape(_attrValue);
@@ -139,6 +141,15 @@ class Context implements Val {
       col = 1;
     } else {
       col += 1;
+    }
+  }
+
+  @override
+  void unexpectAttrName() {
+    if (this.strictMode) {
+      throw ParserException('<$_tagName>不包含属性$_attrValue', this);
+    } else {
+      print(ParserException('<$_tagName>不包含属性$_attrValue', this));
     }
   }
 }

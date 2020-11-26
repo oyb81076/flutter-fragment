@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
 import 'dart:io';
 
-import 'package:flutter_fragment/xml/parse_dir.dart';
-import 'package:flutter_fragment/xml/models.dart';
+import 'package:flutter_fragment/tool/parse_dir.dart';
+import 'package:flutter_fragment/node.dart';
 import 'package:flutter_fragment/xml/serialize.dart';
 import '../resolve.dart';
 

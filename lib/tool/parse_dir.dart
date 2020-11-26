@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'models.dart';
-import 'parse.dart';
+import '../node.dart';
+import '../xml/parse.dart';
 
 Future<Templates> parseDir(String dir) async {
   var files = await Directory(dir).list(recursive: true, followLinks: false);
@@ -12,7 +12,7 @@ Future<Templates> parseDir(String dir) async {
       File file = File(el.path);
       var lm = await file.lastModified();
       String content = await file.readAsString();
-      var fs = parse(content, filename: el.path);
+      var fs = parse(content, filename: el.path, strictMode: true);
       if (fs.children.isEmpty) return;
       if (fs.children.length == 1) {
         if (fs.children[0].id == null) {

@@ -1,9 +1,9 @@
-import 'chars.dart';
+import '../utils/chars.dart';
 import 'context.dart';
-import 'models.dart';
+import '../node.dart';
 
-Templates parse(String content, {String filename = ""}) {
-  Context context = Context(content, filename);
+Templates parse(String content, {String filename = "", bool strictMode = false}) {
+  Context context = Context(content, filename, strictMode);
   int flag = _FLAG_NONE;
   for (int i = 0; i < content.length; i++) {
     int c = content.codeUnitAt(i);

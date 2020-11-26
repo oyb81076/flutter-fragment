@@ -1,4 +1,4 @@
-import 'package:flutter_fragment/xml/chars.dart';
+import 'package:flutter_fragment/utils/chars.dart';
 import 'package:test/test.dart';
 
 void main() {

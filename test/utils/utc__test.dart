@@ -1,4 +1,4 @@
-import 'package:flutter_fragment/xml/utc.dart';
+import 'package:flutter_fragment/utils/utc.dart';
 import 'package:test/test.dart';
 
 void main() {
