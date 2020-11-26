@@ -37,7 +37,7 @@ class Context implements Val {
   }
 
   get doubleVal {
-    if (_attrValue == null) return null;
+    if (_attrValue == null || _attrValue.isEmpty) return null;
     double val = double.tryParse(_attrValue);
     if (val == null)
       throw ParserException("无法将字符串'$_attrValue'转化为double", this);
@@ -45,10 +45,15 @@ class Context implements Val {
   }
 
   get datetimeVal {
-    if (_attrValue == null) return null;
+    if (_attrValue == null || _attrValue.isEmpty) return null;
     DateTime val = DateTime.tryParse(_attrValue);
     if (val == null) throw ParserException('无法将"$_attrValue"转化为日期格式', this);
     return val;
+  }
+
+  get boolVal {
+    if (_attrValue == null) return true;
+    return _attrValue != 'false';
   }
 
   void attrName(int index) {

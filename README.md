@@ -16,10 +16,15 @@ templates/bottom.xml
 </view>
 ```
 
-fragments/left.xml
+fragments/main.xml
 
 ```xml
 <view width=20 height=30>
+  <fragment url="http://192.168.0.1">
+    <view>
+      <text>Loading....</text>
+    </view>
+  </fragment>
 </view>
 ```
 
@@ -50,7 +55,9 @@ class App extends StatelessWidget {
             child: Fragment(id: 'bottom'),
           ),
           Fragment(id: 'bottom'),
-          Fragment(url: 'http://192.168.1.1/some-dynamic-xml-render-by-server'),
+          Fragment(url: 'http://192.168.1.1/some-dynamic-xml-render-by-server', children: [
+            Text('Loading...'),
+          ]),
         ],
       );
     );

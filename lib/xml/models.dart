@@ -4,6 +4,7 @@ abstract class Val {
   double get doubleVal;
   String get strVal;
   DateTime get datetimeVal;
+  bool get boolVal;
 }
 
 // 验证父子标签是否合法
