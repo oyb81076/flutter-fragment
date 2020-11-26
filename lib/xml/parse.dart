@@ -70,19 +70,19 @@ const List<int Function(int, int, Context)> _ACTIONS = [
 ];
 
 int _on_none(int c, int index, Context context) {
-  if (c == LT) return _FLAG_NONE_LT;
+  if (c == LESS_THAN_SIGN) return _FLAG_NONE_LT;
   if (isSpace(c)) return _FLAG_NONE;
   throw new ParserException('非文本标签内部无法插入文本', context);
 }
 
 int _on_none_lt(int c, int index, Context context) {
-  if (c == SLASH) {
+  if (c == SOLIDUS) {
     context.offset = index + 1;
     return _FLAG_NONE_CLOSING;
   } else if (isAlpha(c)) {
     context.offset = index;
     return _FLAG_OPEN_TAG_NAME;
-  } else if (c == NOT) {
+  } else if (c == EXCLAMATION_MARK) {
     return _FLAG_NONE_COMMENT_1;
   } else {
     throw ParserException('未知字符<$c', context);
@@ -96,13 +96,13 @@ int _on_open_tag_name(int c, int index, Context context) {
     context.tagName(index);
     context.createElement();
     return _FLAG_OPENING;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     context.tagName(index);
     context.createElement();
     if (!context.texting) return _FLAG_NONE;
     context.offset = index + 1;
     return _FLAG_TEXT;
-  } else if (c == SLASH) {
+  } else if (c == SOLIDUS) {
     context.tagName(index);
     context.createElement();
     return _FLAG_OPENING_CLOSING;
@@ -115,11 +115,11 @@ int _on_opening(int c, int index, Context context) {
   if (isAttrName(c)) {
     context.offset = index;
     return _FLAG_ATTR_NAME;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     if (!context.texting) return _FLAG_NONE;
     context.offset = index + 1;
     return _FLAG_TEXT;
-  } else if (c == SLASH) {
+  } else if (c == SOLIDUS) {
     return _FLAG_OPENING_CLOSING;
   } else if (isSpace(c)) {
     return _FLAG_OPENING;
@@ -129,7 +129,7 @@ int _on_opening(int c, int index, Context context) {
 }
 
 int _on_opening_closing(int c, int index, Context context) {
-  if (c != GT) throw new ParserException('自闭合标签错误, 当前字符必须为>', context);
+  if (c != GREATER_THAN_SIGN) throw new ParserException('自闭合标签错误, 当前字符必须为>', context);
   context.closeElement();
   return _FLAG_NONE;
 }
@@ -139,11 +139,11 @@ int _on_attr_name(int c, int index, Context context) {
     context.attrName(index);
     context.setAttr();
     return _FLAG_OPENING;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     context.attrName(index);
     context.setAttr();
     return _FLAG_NONE;
-  } else if (c == EQ) {
+  } else if (c == EQUALS_SIGN) {
     context.attrName(index);
     return _FLAG_ATTR_VALUE;
   } else if (isAttrName(c)) {
@@ -154,10 +154,10 @@ int _on_attr_name(int c, int index, Context context) {
 }
 
 int _on_attr_value(int c, int index, Context context) {
-  if (c == QUOT) {
+  if (c == QUOTATION_MARK) {
     context.offset = index + 1;
     return _FLAG_ATTR_VALUE_QUOT;
-  } else if (c == APOS) {
+  } else if (c == APOSTROPHE) {
     context.offset = index + 1;
     return _FLAG_ATTR_VALUE_APOS;
   } else if (isSpace(c)) {
@@ -174,7 +174,7 @@ int _on_attr_value_none(int c, int index, Context context) {
     context.attrValue(index);
     context.setAttr();
     return _FLAG_OPENING;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     context.attrValue(index);
     context.setAttr();
     if (!context.texting) return _FLAG_NONE;
@@ -186,7 +186,7 @@ int _on_attr_value_none(int c, int index, Context context) {
 }
 
 int _on_attr_value_quot(int c, int index, Context context) {
-  if (c != QUOT) {
+  if (c != QUOTATION_MARK) {
     return _FLAG_ATTR_VALUE_QUOT;
   } else {
     context.attrValue(index);
@@ -196,7 +196,7 @@ int _on_attr_value_quot(int c, int index, Context context) {
 }
 
 int _on_attr_value_apos(int c, int index, Context context) {
-  if (c != APOS) {
+  if (c != APOSTROPHE) {
     return _FLAG_ATTR_VALUE_APOS;
   } else {
     context.attrValue(index);
@@ -206,28 +206,28 @@ int _on_attr_value_apos(int c, int index, Context context) {
 }
 
 int _on_text(int c, int index, Context context) {
-  if (c == LT) return _FLAG_TEXT_LT;
+  if (c == LESS_THAN_SIGN) return _FLAG_TEXT_LT;
   return _FLAG_TEXT;
 }
 
 int _on_text_lt(int c, int index, Context context) {
-  if (c == SLASH) {
+  if (c == SOLIDUS) {
     context.text(index - 1);
     context.offset = index + 1;
     return _FLAG_TEXT_CLOSING;
-  } else if (c == '!') {
+  } else if (c == EXCLAMATION_MARK) {
     return _FLAG_TEXT_COMMENT_1;
-  } else if (isAlpha(c)) {
-    throw ParserException('文本标签内部禁止使用其他标签', context);
-  } else {
+  } else if (isSpace(c)) {
     return _FLAG_TEXT;
+  } else {
+    throw ParserException('文本标签内部禁止使用其他标签', context);
   }
 }
 
 int _on_none_closing(int c, int index, Context context) {
   if (isAlpha(c)) {
     return _FLAG_NONE_CLOSING;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     context.tagName(index);
     context.closeElement();
     return _FLAG_NONE;
@@ -239,7 +239,7 @@ int _on_none_closing(int c, int index, Context context) {
 int _on_text_closing(int c, int index, Context context) {
   if (isAlpha(c)) {
     return _FLAG_TEXT_CLOSING;
-  } else if (c == GT) {
+  } else if (c == GREATER_THAN_SIGN) {
     context.closeElement();
     return _FLAG_NONE;
   }
@@ -248,56 +248,56 @@ int _on_text_closing(int c, int index, Context context) {
 
 // at <!
 int _on_none_commnet_1(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_NONE_COMMENT_2;
+  if (c == HYPHEN_MINUS) return _FLAG_NONE_COMMENT_2;
   throw new ParserException("错误的字符", context);
 }
 
 // at <!-
 int _on_none_commnet_2(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_NONE_COMMENT_3;
+  if (c == HYPHEN_MINUS) return _FLAG_NONE_COMMENT_3;
   throw new ParserException("错误的字符$c", context);
 }
 
 // at <!--
 int _on_none_commnet_3(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_NONE_COMMENT_4;
+  if (c == HYPHEN_MINUS) return _FLAG_NONE_COMMENT_4;
   return _FLAG_NONE_COMMENT_3;
 }
 
 // at <!--   -
 int _on_none_commnet_4(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_NONE_COMMENT_5;
+  if (c == HYPHEN_MINUS) return _FLAG_NONE_COMMENT_5;
   return _FLAG_NONE_COMMENT_4;
 }
 
 // at <!--   --
 int _on_none_commnet_5(int c, int index, Context context) {
-  if (c == GT) return _FLAG_NONE;
+  if (c == GREATER_THAN_SIGN) return _FLAG_NONE;
   throw new ParserException('must be > to close comment, bug got $c', context);
 }
 
 int _on_text_commnet_1(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_TEXT_COMMENT_2;
+  if (c == HYPHEN_MINUS) return _FLAG_TEXT_COMMENT_2;
   return _FLAG_TEXT;
 }
 
 int _on_text_commnet_2(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_TEXT_COMMENT_3;
+  if (c == HYPHEN_MINUS) return _FLAG_TEXT_COMMENT_3;
   return _FLAG_TEXT;
 }
 
 int _on_text_commnet_3(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_TEXT_COMMENT_4;
+  if (c == HYPHEN_MINUS) return _FLAG_TEXT_COMMENT_4;
   return _FLAG_TEXT_COMMENT_3;
 }
 
 int _on_text_commnet_4(int c, int index, Context context) {
-  if (c == MINUS) return _FLAG_TEXT_COMMENT_5;
+  if (c == HYPHEN_MINUS) return _FLAG_TEXT_COMMENT_5;
   return _FLAG_TEXT_COMMENT_3;
 }
 
 int _on_text_commnet_5(int c, int index, Context context) {
-  if (c == GT) return _FLAG_TEXT;
+  if (c == GREATER_THAN_SIGN) return _FLAG_TEXT;
   throw new ParserException('must be > to close comment, bug got $c', context);
 }
 

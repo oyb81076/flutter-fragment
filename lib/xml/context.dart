@@ -129,7 +129,7 @@ class Context implements Val {
   }
 
   void accept(int c) {
-    if (c == LB) {
+    if (c == LINE_FEED) {
       line += 1;
       col = 1;
     } else {

@@ -1,6 +1,6 @@
 <template id="af">
   <image src="assets/tail.png" href="/image"/>
-  <text href="/text">Some Text &gt; HEre</text>
+  <text href="/text">Some Text > HEre</text>
   <view width="200" height="100" href="/home"/>
   <view height="100">
     <view>
