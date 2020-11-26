@@ -64,6 +64,8 @@ class Templates implements Node, WithChildren {
   setAttr(String attrName, Val val) {
     if (attrName == 'lastModified') {
       lastModified = val.datetimeVal;
+    } else if (attrName == 'etag') {
+      etag = val.strVal;
     } else {
       throw ParserException('<fragments> 不存在属性${attrName}', val);
     }
